@@ -8,6 +8,8 @@ interface Props {
   loading?: boolean;
 }
 
+const suggestions = ["番茄炒蛋", "红烧肉", "麻婆豆腐", "蛋炒饭", "可乐鸡翅"];
+
 export default function DishInput({ onSubmit, loading }: Props) {
   const [dishName, setDishName] = useState("");
   const [extraNotes, setExtraNotes] = useState("");
@@ -32,6 +34,19 @@ export default function DishInput({ onSubmit, loading }: Props) {
           placeholder="例如：番茄炒蛋、红烧肉、奶油蘑菇汤"
           className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-base focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setDishName(s)}
+            className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-sm text-zinc-600 hover:border-orange-300 hover:text-orange-700"
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       <div className="space-y-2">

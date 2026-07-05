@@ -8,6 +8,7 @@ import DishInput from "@/components/DishInput";
 import RecipeCard from "@/components/RecipeCard";
 import CookingMode from "@/components/CookingMode";
 import FeedbackForm from "@/components/FeedbackForm";
+import Toast from "@/components/Toast";
 import {
   saveProfile,
   saveCurrentSession,
@@ -17,11 +18,13 @@ import {
   loadProviders,
   loadPantry,
   loadPreferences,
+  savePreferences,
   addOrUpdatePantryItem,
   pantryToProfile,
   setCurrentUserId,
   syncFromServer,
 } from "@/lib/storage";
+import { calibrateTasteFromFeedback, describeTasteChange } from "@/lib/taste";
 import { useAuth, logout } from "@/lib/auth-store";
 import type {
   KitchenProfile,
@@ -30,6 +33,7 @@ import type {
   SessionFeedback,
   ProviderConfig,
   PantryItem,
+  UserPreferences,
 } from "@/lib/types";
 import {
   CookingPot,
@@ -107,8 +111,13 @@ export default function Home() {
   const [state, setState] = useState<InitialState>(loadInitialState);
   const [providers] = useState<ProviderConfig[]>(loadProviders);
   const [pantry, setPantry] = useState<PantryItem[]>(loadPantry);
+  const [preferences, setPreferences] = useState<UserPreferences>(loadPreferences);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; visible: boolean }>({
+    message: "",
+    visible: false,
+  });
 
   const { profile, view, recipe, session } = state;
 
@@ -157,7 +166,7 @@ export default function Home() {
         body: JSON.stringify({
           profile: effectiveProfile,
           provider: defaultProvider,
-          preferences: loadPreferences(),
+          preferences,
           dishName,
           extraNotes,
         }),
@@ -205,6 +214,8 @@ export default function Home() {
         ? prev.map((i) => (i.id === item.id ? item : i))
         : [item, ...prev]
     );
+    const label = category === "seasoning" ? "配料/调料" : "食材";
+    setToast({ message: `已将「${item.name}」加入${label}储备`, visible: true });
   };
 
   const handleStartCooking = () => updateState({ view: "cooking" });
@@ -223,6 +234,24 @@ export default function Home() {
 
   const handleFeedback = (feedback: SessionFeedback) => {
     if (!session) return;
+
+    if (preferences.autoCalibrateTaste) {
+      const nextTaste = calibrateTasteFromFeedback(preferences, feedback);
+      const nextPreferences = {
+        ...preferences,
+        tastePreferences: nextTaste,
+      };
+      setPreferences(nextPreferences);
+      savePreferences(nextPreferences);
+      const changeText = describeTasteChange(
+        preferences.tastePreferences,
+        nextTaste
+      );
+      if (changeText) {
+        setToast({ message: changeText, visible: true });
+      }
+    }
+
     finishSession({
       ...session,
       feedback,
@@ -253,6 +282,11 @@ export default function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
+      <Toast
+        message={toast.message}
+        visible={toast.visible}
+        onClose={() => setToast((t) => ({ ...t, visible: false }))}
+      />
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2 text-lg font-bold text-zinc-900">

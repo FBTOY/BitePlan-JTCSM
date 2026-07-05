@@ -5,10 +5,29 @@ export type ProviderType = "anthropic" | "moonshot";
 export type WeightUnit = "g" | "kg" | "oz" | "lb";
 export type VolumeUnit = "ml" | "l" | "cup" | "tbsp" | "tsp";
 
+export type TasteKey = "sweet" | "sour" | "bitter" | "spicy" | "salty";
+
+export interface TastePreferences {
+  sweet: number;
+  sour: number;
+  bitter: number;
+  spicy: number;
+  salty: number;
+}
+
+export interface CustomUnit {
+  id: string;
+  name: string;
+  grams: number;
+}
+
 export interface UserPreferences {
   weightUnit: WeightUnit;
   volumeUnit: VolumeUnit;
   onlyUseMassUnits: boolean;
+  tastePreferences: TastePreferences;
+  customUnits: CustomUnit[];
+  autoCalibrateTaste: boolean;
 }
 
 export interface User {

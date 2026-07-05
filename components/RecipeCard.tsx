@@ -28,10 +28,10 @@ function IngredientRow({
         <button
           type="button"
           onClick={onClick}
-          className="rounded p-1 text-zinc-400 hover:bg-green-50 hover:text-green-700"
+          className="flex items-center gap-1 rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
           title="加入储备"
         >
-          <Plus size={14} />
+          <Plus size={12} /> 加入储备
         </button>
       )}
     </li>

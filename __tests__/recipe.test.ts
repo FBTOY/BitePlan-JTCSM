@@ -14,6 +14,17 @@ const preferences: UserPreferences = {
   weightUnit: "g",
   volumeUnit: "ml",
   onlyUseMassUnits: false,
+  tastePreferences: {
+    sweet: 50,
+    sour: 50,
+    bitter: 50,
+    spicy: 50,
+    salty: 50,
+  },
+  customUnits: [
+    { id: "spoon", name: "勺", grams: 5 },
+  ],
+  autoCalibrateTaste: false,
 };
 
 describe("buildRecipePrompt", () => {
@@ -37,6 +48,18 @@ describe("buildRecipePrompt", () => {
       onlyUseMassUnits: true,
     });
     expect(prompt).toContain("质量单位");
+  });
+
+  it("includes taste preferences", () => {
+    const prompt = buildRecipePrompt(profile, "番茄炒蛋", preferences);
+    expect(prompt).toContain("口味偏好");
+    expect(prompt).toContain("甜:50/100");
+  });
+
+  it("includes custom units", () => {
+    const prompt = buildRecipePrompt(profile, "番茄炒蛋", preferences);
+    expect(prompt).toContain("用户自定义单位");
+    expect(prompt).toContain("1 勺 = 5 克");
   });
 });
 

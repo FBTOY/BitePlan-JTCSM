@@ -151,12 +151,21 @@ describe("storage", () => {
   });
 
   it("saves and loads preferences", () => {
-    const preferences = {
+    const saved = {
       weightUnit: "kg" as const,
       volumeUnit: "l" as const,
       onlyUseMassUnits: true,
+      tastePreferences: {
+        sweet: 60,
+        sour: 50,
+        bitter: 50,
+        spicy: 30,
+        salty: 50,
+      },
+      customUnits: [{ id: "u1", name: "碗", grams: 200 }],
+      autoCalibrateTaste: true,
     };
-    savePreferences(preferences);
-    expect(loadPreferences()).toEqual(preferences);
+    savePreferences(saved);
+    expect(loadPreferences()).toEqual(saved);
   });
 });

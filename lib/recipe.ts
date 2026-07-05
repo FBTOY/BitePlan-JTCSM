@@ -7,6 +7,8 @@ import type {
   ProviderType,
   RecipePlan,
   UserPreferences,
+  TasteKey,
+  TastePreferences,
 } from "./types";
 
 const ingredientSchema = z.object({
@@ -52,6 +54,25 @@ export const providerLabels: Record<ProviderType, string> = {
   moonshot: "Moonshot (Kimi)",
 };
 
+const tasteLabels: Record<TasteKey, string> = {
+  sweet: "甜",
+  sour: "酸",
+  bitter: "苦",
+  spicy: "辣",
+  salty: "咸",
+};
+
+function formatTastePreferences(preferences: TastePreferences): string {
+  return Object.entries(preferences)
+    .map(([key, value]) => `${tasteLabels[key as TasteKey]}:${value}/100`)
+    .join(" · ");
+}
+
+function formatCustomUnits(units: { name: string; grams: number }[]): string {
+  if (units.length === 0) return "无";
+  return units.map((u) => `1 ${u.name} = ${u.grams} 克`).join(" · ");
+}
+
 export function buildRecipePrompt(
   profile: KitchenProfile,
   dishName: string,
@@ -72,6 +93,14 @@ export function buildRecipePrompt(
   const unitInstructions = preferences.onlyUseMassUnits
     ? `所有食材用量统一使用质量单位（优先 ${preferences.weightUnit}），不要出现容积单位；若原始菜谱为容积，请按常见换算转换为质量单位。`
     : `重量单位统一使用 ${preferences.weightUnit}，容积单位统一使用 ${preferences.volumeUnit}。`;
+
+  const tasteInstructions = `口味偏好（数值越高越偏好该味道，50 为中性，低于 50 表示希望减少，高于 50 表示希望增加）：${formatTastePreferences(
+    preferences.tastePreferences
+  )}。请据此调整糖、醋、辣椒、盐等调味料的用量，并在备注中简要说明调整方向。`;
+
+  const customUnitInstructions = `用户自定义单位：${formatCustomUnits(
+    preferences.customUnits
+  )}。在描述用量时优先使用这些模糊/家用单位。`;
 
   return `你是一位专业中餐与西式家常菜厨师，擅长根据用户现有的厨房条件制定详细、可执行、清单化的烹饪方案。
 
@@ -99,9 +128,11 @@ ${extraNotes ? `\n## 额外说明\n${extraNotes}\n` : ""}
 1. 根据用户现有食材和工具调整方案；缺少的食材/工具要列出但不要让方案不可执行（给出替代方案或建议）。
 2. 步骤要细粒度、可逐项勾选，每个步骤包含：标题、详细操作说明、预计耗时（分钟）、小贴士、至少一条清单项（checklist）。
 3. ${unitInstructions}
-4. 总耗时尽量控制在用户可用时间 ${profile.timeMinutes} 分钟内。
-5. 难度与说明要匹配用户的烹饪水平。
-6. 必须严格返回下面 JSON 结构，不要包含 markdown 代码块外的任何解释文字。
+4. ${customUnitInstructions}
+5. ${tasteInstructions}
+6. 总耗时尽量控制在用户可用时间 ${profile.timeMinutes} 分钟内。
+7. 难度与说明要匹配用户的烹饪水平。
+8. 必须严格返回下面 JSON 结构，不要包含 markdown 代码块外的任何解释文字。
 
 输出格式：
 ${JSON.stringify(

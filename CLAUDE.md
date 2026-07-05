@@ -31,18 +31,19 @@ Supported providers:
 
 - `app/page.tsx` is the single-page client shell. It owns the global view state (`profile` → `dish` → `recipe` → `cooking` → `feedback` → `done`) and storage through `lib/storage.ts`.
 - `app/login/page.tsx` — account registration and login.
-- `app/settings/page.tsx` — AI provider configuration and unit preferences.
-- `app/pantry/page.tsx` — manage pantry items (ingredients, seasonings, tools).
+- `app/settings/page.tsx` — AI provider configuration, unit preferences, taste preferences, custom units, and auto-calibration toggle.
+- `app/pantry/page.tsx` — manage pantry items by category (ingredients, seasonings, tools).
 - `app/history/page.tsx` — browse archived cooking sessions and feedback.
 - `components/` contains the major UI sections:
   - `KitchenProfileForm.tsx` — servings, time, skill level, dietary notes.
   - `DishInput.tsx` — asks what the user wants to cook.
-  - `RecipeCard.tsx` — displays the generated recipe, ingredient/tool gaps, and lets users add ingredients/seasonings to the pantry.
+  - `RecipeCard.tsx` — displays the generated recipe, ingredient/tool gaps, and lets users add ingredients/seasonings to the pantry with toast confirmation.
   - `CookingMode.tsx` — interactive step-by-step checklist with progress tracking, per-step titles on the progress bar, and a full-process modal.
-  - `FeedbackForm.tsx` — rating, difficulty, taste, and notes.
+  - `FeedbackForm.tsx` — rating, difficulty, taste, and notes; when auto-calibration is enabled, feedback is used to adjust taste preferences.
   - `ProviderConfigForm.tsx` — add, edit, and select AI providers.
-  - `PreferencesForm.tsx` — weight/volume units and mass-only option.
-  - `PantryManager.tsx` — add/remove pantry items.
+  - `PreferencesForm.tsx` — weight/volume units, mass-only option, taste sliders, custom unit mappings, and auto-calibrate toggle.
+  - `PantryManager.tsx` — category-tabbed add/remove/search pantry items.
+  - `Toast.tsx` — lightweight success notification.
   - `AuthForm.tsx` / `LoginForm.tsx` — login/registration UI.
 
 ### Backend
@@ -50,12 +51,13 @@ Supported providers:
 - `app/api/recipe/route.ts` receives the kitchen profile, active provider config, user preferences, and dish name, then delegates to `lib/recipe.ts` to call the selected AI and return a validated `RecipePlan`.
 - `lib/recipe.ts` builds the prompt, validates the JSON response with Zod, and switches between the Anthropic SDK and the OpenAI-compatible SDK for Moonshot/Kimi.
 - `lib/recipe-plan.ts` post-processes generated plans, compressing consecutive short steps and adding next-step hints.
+- `lib/taste.ts` parses free-text feedback and adjusts numeric taste preferences when auto-calibration is enabled.
 - `app/api/auth/*` handles registration, login, logout, and the current user session.
 - `app/api/user/data/route.ts` reads/writes per-user JSON data (profile, pantry, providers, preferences, current session, history) to SQLite.
 
 ### Data model and persistence
 
-- `lib/types.ts` defines `KitchenProfile`, `RecipePlan`, `RecipeStep`, `CookingSession`, `SessionFeedback`, `ProviderConfig`, `PantryItem`, `UserPreferences`, and `User`.
+- `lib/types.ts` defines `KitchenProfile`, `RecipePlan`, `RecipeStep`, `CookingSession`, `SessionFeedback`, `ProviderConfig`, `PantryItem`, `UserPreferences`, `TastePreferences`, `CustomUnit`, and `User`.
 - `lib/db.ts` manages the SQLite database (`data/biteplan.db`) and the `users`, `sessions`, and `user_data` tables.
 - `lib/storage.ts` reads and writes from `localStorage` and syncs to the server when a user is logged in.
 - `lib/auth.ts` and `lib/auth-store.ts` handle password hashing, session cookies, and client auth state.

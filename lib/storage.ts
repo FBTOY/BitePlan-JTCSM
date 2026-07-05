@@ -213,29 +213,37 @@ export function pantryToProfile(
 }
 
 export function loadPreferences(): UserPreferences {
+  const defaults: UserPreferences = {
+    weightUnit: "g",
+    volumeUnit: "ml",
+    onlyUseMassUnits: false,
+    tastePreferences: {
+      sweet: 50,
+      sour: 50,
+      bitter: 50,
+      spicy: 50,
+      salty: 50,
+    },
+    customUnits: [
+      { id: "spoon", name: "勺", grams: 5 },
+      { id: "tbsp-zh", name: "汤匙", grams: 15 },
+      { id: "tsp-zh", name: "茶匙", grams: 5 },
+    ],
+    autoCalibrateTaste: false,
+  };
+
   if (typeof window === "undefined") {
-    return {
-      weightUnit: "g",
-      volumeUnit: "ml",
-      onlyUseMassUnits: false,
-    };
+    return defaults;
   }
   const raw = localStorage.getItem(PREFERENCES_KEY);
   if (!raw) {
-    return {
-      weightUnit: "g",
-      volumeUnit: "ml",
-      onlyUseMassUnits: false,
-    };
+    return defaults;
   }
   try {
-    return JSON.parse(raw) as UserPreferences;
+    const parsed = JSON.parse(raw) as Partial<UserPreferences>;
+    return { ...defaults, ...parsed };
   } catch {
-    return {
-      weightUnit: "g",
-      volumeUnit: "ml",
-      onlyUseMassUnits: false,
-    };
+    return defaults;
   }
 }
 
