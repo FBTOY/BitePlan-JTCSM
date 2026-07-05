@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { setAuthUser } from "@/lib/auth-store";
+import type { User } from "@/lib/types";
 
 interface Props {
   mode: "login" | "register";
@@ -32,11 +34,14 @@ export default function AuthForm({ mode, onSuccess }: Props) {
         body: JSON.stringify({ username, password }),
       });
       const data = (await res.json()) as {
-        user?: { id: number; username: string };
+        user?: User;
         error?: string;
       };
       if (!res.ok || data.error) {
         throw new Error(data.error || "请求失败");
+      }
+      if (data.user) {
+        setAuthUser(data.user);
       }
       onSuccess?.();
     } catch (err) {

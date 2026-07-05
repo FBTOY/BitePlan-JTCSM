@@ -7,7 +7,9 @@ interface AuthState {
   synced: boolean;
 }
 
-let state: AuthState = { user: null, loading: true, synced: false };
+const initialState: AuthState = { user: null, loading: true, synced: false };
+const serverSnapshot: AuthState = { user: null, loading: false, synced: false };
+let state: AuthState = initialState;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -22,6 +24,11 @@ async function fetchUser(): Promise<void> {
   } catch {
     state = { ...state, user: null, loading: false };
   }
+  emit();
+}
+
+export function setAuthUser(user: User | null): void {
+  state = { user, loading: false, synced: false };
   emit();
 }
 
@@ -42,6 +49,11 @@ function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   if (state.loading) {
     void fetchUser();
+  } else if (state.user === null) {
+    // 可能是登录后状态未刷新，重新获取
+    state = { ...state, loading: true };
+    emit();
+    void fetchUser();
   }
   return () => listeners.delete(listener);
 }
@@ -51,7 +63,7 @@ function getSnapshot(): AuthState {
 }
 
 function getServerSnapshot(): AuthState {
-  return { user: null, loading: false, synced: false };
+  return serverSnapshot;
 }
 
 export function useAuth(): AuthState {
