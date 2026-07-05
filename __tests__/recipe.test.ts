@@ -1,5 +1,5 @@
 import { buildRecipePrompt, parseRecipePlan } from "@/lib/recipe";
-import type { KitchenProfile } from "@/lib/types";
+import type { KitchenProfile, UserPreferences } from "@/lib/types";
 
 const profile: KitchenProfile = {
   servings: 2,
@@ -10,9 +10,15 @@ const profile: KitchenProfile = {
   availableTools: ["炒锅"],
 };
 
+const preferences: UserPreferences = {
+  weightUnit: "g",
+  volumeUnit: "ml",
+  onlyUseMassUnits: false,
+};
+
 describe("buildRecipePrompt", () => {
   it("includes dish name and profile fields", () => {
-    const prompt = buildRecipePrompt(profile, "番茄炒蛋");
+    const prompt = buildRecipePrompt(profile, "番茄炒蛋", preferences);
     expect(prompt).toContain("番茄炒蛋");
     expect(prompt).toContain("2 人");
     expect(prompt).toContain("不吃辣");
@@ -21,8 +27,16 @@ describe("buildRecipePrompt", () => {
   });
 
   it("includes extra notes when provided", () => {
-    const prompt = buildRecipePrompt(profile, "番茄炒蛋", "希望少油");
+    const prompt = buildRecipePrompt(profile, "番茄炒蛋", preferences, "希望少油");
     expect(prompt).toContain("希望少油");
+  });
+
+  it("includes mass-only unit instructions", () => {
+    const prompt = buildRecipePrompt(profile, "番茄炒蛋", {
+      ...preferences,
+      onlyUseMassUnits: true,
+    });
+    expect(prompt).toContain("质量单位");
   });
 });
 

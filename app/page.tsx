@@ -16,9 +16,13 @@ import {
   loadCurrentSession,
   loadProviders,
   loadPantry,
+  loadPreferences,
   addOrUpdatePantryItem,
   pantryToProfile,
+  setCurrentUserId,
+  syncFromServer,
 } from "@/lib/storage";
+import { useAuth, logout } from "@/lib/auth-store";
 import type {
   KitchenProfile,
   RecipePlan,
@@ -34,6 +38,8 @@ import {
   Package,
   History,
   Sparkles,
+  User as UserIcon,
+  LogOut,
 } from "lucide-react";
 
 type View =
@@ -97,6 +103,7 @@ function loadInitialState(): InitialState {
 
 export default function Home() {
   const mounted = useMounted();
+  const { user } = useAuth();
   const [state, setState] = useState<InitialState>(loadInitialState);
   const [providers] = useState<ProviderConfig[]>(loadProviders);
   const [pantry, setPantry] = useState<PantryItem[]>(loadPantry);
@@ -110,6 +117,18 @@ export default function Home() {
       saveCurrentSession(session);
     }
   }, [session]);
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUserId(user.id);
+      void (async () => {
+        await syncFromServer();
+        setPantry(loadPantry());
+      })();
+    } else {
+      setCurrentUserId(null);
+    }
+  }, [user]);
 
   const effectiveProfile = useMemo(() => {
     if (!profile) return null;
@@ -138,6 +157,7 @@ export default function Home() {
         body: JSON.stringify({
           profile: effectiveProfile,
           provider: defaultProvider,
+          preferences: loadPreferences(),
           dishName,
           extraNotes,
         }),
@@ -237,7 +257,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-2 text-lg font-bold text-zinc-900">
             <CookingPot className="text-orange-600" size={24} />
-            家庭厨房助手
+            今天吃什么 BitePlan
           </div>
           <nav className="flex items-center gap-4">
             <Link
@@ -266,6 +286,25 @@ export default function Home() {
               >
                 修改档案
               </button>
+            )}
+            {user ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  window.location.reload();
+                }}
+                className="flex items-center gap-1 text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                <LogOut size={16} /> 退出
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1 text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                <UserIcon size={16} /> 登录
+              </Link>
             )}
           </nav>
         </div>

@@ -3,13 +3,67 @@ import type {
   CookingSession,
   ProviderConfig,
   PantryItem,
+  UserPreferences,
 } from "./types";
 
-const PROFILE_KEY = "jtcsm:kitchenProfile";
-const SESSIONS_KEY = "jtcsm:sessions";
-const CURRENT_SESSION_KEY = "jtcsm:currentSession";
-const PROVIDERS_KEY = "jtcsm:providers";
-const PANTRY_KEY = "jtcsm:pantry";
+const PROFILE_KEY = "biteplan:kitchenProfile";
+const SESSIONS_KEY = "biteplan:sessions";
+const CURRENT_SESSION_KEY = "biteplan:currentSession";
+const PROVIDERS_KEY = "biteplan:providers";
+const PANTRY_KEY = "biteplan:pantry";
+const PREFERENCES_KEY = "biteplan:preferences";
+
+let currentUserId: number | null = null;
+
+export function setCurrentUserId(userId: number | null): void {
+  currentUserId = userId;
+}
+
+export function getCurrentUserId(): number | null {
+  return currentUserId;
+}
+
+async function syncToServer(key: string, value: unknown): Promise<void> {
+  if (currentUserId === null) return;
+  try {
+    await fetch("/api/user/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+  } catch {
+    // 同步失败时保留本地数据
+  }
+}
+
+async function deleteFromServer(key: string): Promise<void> {
+  if (currentUserId === null) return;
+  try {
+    await fetch(`/api/user/data?key=${encodeURIComponent(key)}`, {
+      method: "DELETE",
+    });
+  } catch {
+    // ignore
+  }
+}
+
+export async function syncFromServer(): Promise<void> {
+  if (currentUserId === null) return;
+  try {
+    const res = await fetch("/api/user/data");
+    if (!res.ok) return;
+    const { data } = (await res.json()) as { data: Record<string, unknown> };
+    if (typeof window === "undefined") return;
+    if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
+    if (data.pantry) localStorage.setItem(PANTRY_KEY, JSON.stringify(data.pantry));
+    if (data.providers) localStorage.setItem(PROVIDERS_KEY, JSON.stringify(data.providers));
+    if (data.preferences) localStorage.setItem(PREFERENCES_KEY, JSON.stringify(data.preferences));
+    if (data.currentSession) localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(data.currentSession));
+    if (data.history) localStorage.setItem(SESSIONS_KEY, JSON.stringify(data.history));
+  } catch {
+    // ignore
+  }
+}
 
 export function loadProfile(): KitchenProfile | null {
   if (typeof window === "undefined") return null;
@@ -25,6 +79,7 @@ export function loadProfile(): KitchenProfile | null {
 export function saveProfile(profile: KitchenProfile): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  void syncToServer("profile", profile);
 }
 
 export function loadCurrentSession(): CookingSession | null {
@@ -42,8 +97,10 @@ export function saveCurrentSession(session: CookingSession | null): void {
   if (typeof window === "undefined") return;
   if (session) {
     localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(session));
+    void syncToServer("currentSession", session);
   } else {
     localStorage.removeItem(CURRENT_SESSION_KEY);
+    void deleteFromServer("currentSession");
   }
 }
 
@@ -51,7 +108,9 @@ export function archiveSession(session: CookingSession): void {
   if (typeof window === "undefined") return;
   const sessions = loadSessions();
   sessions.unshift(session);
-  localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions.slice(0, 50)));
+  const history = sessions.slice(0, 50);
+  localStorage.setItem(SESSIONS_KEY, JSON.stringify(history));
+  void syncToServer("history", history);
 }
 
 export function loadSessions(): CookingSession[] {
@@ -79,6 +138,7 @@ export function loadProviders(): ProviderConfig[] {
 export function saveProviders(providers: ProviderConfig[]): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(PROVIDERS_KEY, JSON.stringify(providers));
+  void syncToServer("providers", providers);
 }
 
 export function getDefaultProvider(): ProviderConfig | null {
@@ -100,9 +160,12 @@ export function loadPantry(): PantryItem[] {
 export function savePantry(items: PantryItem[]): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(PANTRY_KEY, JSON.stringify(items));
+  void syncToServer("pantry", items);
 }
 
-export function addOrUpdatePantryItem(item: Omit<PantryItem, "id" | "updatedAt">): PantryItem {
+export function addOrUpdatePantryItem(
+  item: Omit<PantryItem, "id" | "updatedAt">
+): PantryItem {
   const items = loadPantry();
   const existingIndex = items.findIndex(
     (i) => i.name === item.name && i.category === item.category
@@ -110,7 +173,10 @@ export function addOrUpdatePantryItem(item: Omit<PantryItem, "id" | "updatedAt">
   const now = new Date().toISOString();
   const newItem: PantryItem = {
     ...item,
-    id: existingIndex >= 0 ? items[existingIndex].id : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id:
+      existingIndex >= 0
+        ? items[existingIndex].id
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     updatedAt: now,
   };
 
@@ -144,4 +210,37 @@ export function pantryToProfile(
     availableIngredients: ingredients,
     availableTools: tools,
   };
+}
+
+export function loadPreferences(): UserPreferences {
+  if (typeof window === "undefined") {
+    return {
+      weightUnit: "g",
+      volumeUnit: "ml",
+      onlyUseMassUnits: false,
+    };
+  }
+  const raw = localStorage.getItem(PREFERENCES_KEY);
+  if (!raw) {
+    return {
+      weightUnit: "g",
+      volumeUnit: "ml",
+      onlyUseMassUnits: false,
+    };
+  }
+  try {
+    return JSON.parse(raw) as UserPreferences;
+  } catch {
+    return {
+      weightUnit: "g",
+      volumeUnit: "ml",
+      onlyUseMassUnits: false,
+    };
+  }
+}
+
+export function savePreferences(preferences: UserPreferences): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
+  void syncToServer("preferences", preferences);
 }

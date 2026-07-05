@@ -2,6 +2,20 @@ export type SkillLevel = "beginner" | "intermediate" | "advanced";
 
 export type ProviderType = "anthropic" | "moonshot";
 
+export type WeightUnit = "g" | "kg" | "oz" | "lb";
+export type VolumeUnit = "ml" | "l" | "cup" | "tbsp" | "tsp";
+
+export interface UserPreferences {
+  weightUnit: WeightUnit;
+  volumeUnit: VolumeUnit;
+  onlyUseMassUnits: boolean;
+}
+
+export interface User {
+  id: number;
+  username: string;
+}
+
 export interface ProviderConfig {
   id: string;
   provider: ProviderType;
@@ -44,6 +58,7 @@ export interface RecipeStep {
   durationMinutes?: number;
   tips?: string[];
   checklist: string[];
+  nextStepHint?: string;
 }
 
 export interface RecipePlan {

@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import type { CookingSession, RecipeStep } from "@/lib/types";
-import { Check, ChevronLeft, ChevronRight, Clock, Lightbulb } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Lightbulb,
+  List,
+  X,
+} from "lucide-react";
 
 interface Props {
   session: CookingSession;
@@ -12,6 +20,7 @@ interface Props {
 
 export default function CookingMode({ session, onUpdate, onFinish }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAllSteps, setShowAllSteps] = useState(false);
   const steps = session.recipe.steps;
   const currentStep: RecipeStep | undefined = steps[currentIndex];
 
@@ -61,16 +70,50 @@ export default function CookingMode({ session, onUpdate, onFinish }: Props) {
             style={{ width: `${progress}%` }}
           />
         </div>
+        <div className="flex gap-1 overflow-x-auto pb-2">
+          {steps.map((step, idx) => {
+            const isCompleted = session.completedStepIds.includes(step.id);
+            const isCurrent = idx === currentIndex;
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                className={`shrink-0 rounded-lg px-3 py-2 text-left text-xs ${
+                  isCurrent
+                    ? "bg-orange-100 text-orange-800 ring-1 ring-orange-300"
+                    : isCompleted
+                    ? "bg-green-50 text-green-700"
+                    : "bg-zinc-100 text-zinc-600"
+                }`}
+              >
+                <div className="font-medium">{idx + 1}. {step.title}</div>
+                {step.durationMinutes && (
+                  <div className="opacity-75">{step.durationMinutes} 分钟</div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-xl font-bold text-zinc-900">{currentStep.title}</h3>
-          {currentStep.durationMinutes && (
-            <span className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
-              <Clock size={14} /> {currentStep.durationMinutes} 分钟
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {currentStep.durationMinutes && (
+              <span className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700">
+                <Clock size={14} /> {currentStep.durationMinutes} 分钟
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowAllSteps(true)}
+              className="flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-200"
+            >
+              <List size={14} /> 全流程
+            </button>
+          </div>
         </div>
 
         <p className="mb-6 whitespace-pre-line text-zinc-700 leading-relaxed">
@@ -150,6 +193,47 @@ export default function CookingMode({ session, onUpdate, onFinish }: Props) {
           {currentIndex < steps.length - 1 && <ChevronRight size={16} />}
         </button>
       </div>
+
+      {showAllSteps && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-zinc-900">全流程</h3>
+              <button
+                type="button"
+                onClick={() => setShowAllSteps(false)}
+                className="rounded-full p-2 hover:bg-zinc-100"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {steps.map((step, idx) => (
+                <div
+                  key={step.id}
+                  className={`rounded-lg border p-4 ${
+                    idx === currentIndex
+                      ? "border-orange-300 bg-orange-50"
+                      : "border-zinc-200"
+                  }`}
+                >
+                  <div className="mb-1 font-semibold text-zinc-900">
+                    {idx + 1}. {step.title}
+                  </div>
+                  <p className="whitespace-pre-line text-sm text-zinc-700">
+                    {step.instruction}
+                  </p>
+                  {step.durationMinutes && (
+                    <div className="mt-2 text-xs text-zinc-500">
+                      预计 {step.durationMinutes} 分钟
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,8 @@ import {
   addOrUpdatePantryItem,
   removePantryItem,
   pantryToProfile,
+  loadPreferences,
+  savePreferences,
 } from "@/lib/storage";
 import type {
   KitchenProfile,
@@ -146,5 +148,15 @@ describe("storage", () => {
       { name: "鸡蛋", quantity: "3个" },
     ]);
     expect(merged.availableTools).toEqual(["炒锅"]);
+  });
+
+  it("saves and loads preferences", () => {
+    const preferences = {
+      weightUnit: "kg" as const,
+      volumeUnit: "l" as const,
+      onlyUseMassUnits: true,
+    };
+    savePreferences(preferences);
+    expect(loadPreferences()).toEqual(preferences);
   });
 });

@@ -6,6 +6,7 @@ import type {
   ProviderConfig,
   ProviderType,
   RecipePlan,
+  UserPreferences,
 } from "./types";
 
 const ingredientSchema = z.object({
@@ -54,6 +55,7 @@ export const providerLabels: Record<ProviderType, string> = {
 export function buildRecipePrompt(
   profile: KitchenProfile,
   dishName: string,
+  preferences: UserPreferences,
   extraNotes?: string
 ): string {
   const ingredients = profile.availableIngredients
@@ -66,6 +68,10 @@ export function buildRecipePrompt(
     .join("\n") || "未提供";
 
   const tools = profile.availableTools.map((t) => `- ${t}`).join("\n") || "未提供";
+
+  const unitInstructions = preferences.onlyUseMassUnits
+    ? `所有食材用量统一使用质量单位（优先 ${preferences.weightUnit}），不要出现容积单位；若原始菜谱为容积，请按常见换算转换为质量单位。`
+    : `重量单位统一使用 ${preferences.weightUnit}，容积单位统一使用 ${preferences.volumeUnit}。`;
 
   return `你是一位专业中餐与西式家常菜厨师，擅长根据用户现有的厨房条件制定详细、可执行、清单化的烹饪方案。
 
@@ -92,9 +98,10 @@ ${extraNotes ? `\n## 额外说明\n${extraNotes}\n` : ""}
 要求：
 1. 根据用户现有食材和工具调整方案；缺少的食材/工具要列出但不要让方案不可执行（给出替代方案或建议）。
 2. 步骤要细粒度、可逐项勾选，每个步骤包含：标题、详细操作说明、预计耗时（分钟）、小贴士、至少一条清单项（checklist）。
-3. 总耗时尽量控制在用户可用时间 ${profile.timeMinutes} 分钟内。
-4. 难度与说明要匹配用户的烹饪水平。
-5. 必须严格返回下面 JSON 结构，不要包含 markdown 代码块外的任何解释文字。
+3. ${unitInstructions}
+4. 总耗时尽量控制在用户可用时间 ${profile.timeMinutes} 分钟内。
+5. 难度与说明要匹配用户的烹饪水平。
+6. 必须严格返回下面 JSON 结构，不要包含 markdown 代码块外的任何解释文字。
 
 输出格式：
 ${JSON.stringify(
@@ -136,10 +143,11 @@ export function parseRecipePlan(raw: string): RecipePlan {
 export async function generateRecipePlan(
   config: ProviderConfig,
   profile: KitchenProfile,
+  preferences: UserPreferences,
   dishName: string,
   extraNotes?: string
 ): Promise<RecipePlan> {
-  const prompt = buildRecipePrompt(profile, dishName, extraNotes);
+  const prompt = buildRecipePrompt(profile, dishName, preferences, extraNotes);
 
   if (config.provider === "anthropic") {
     const client = new Anthropic({ apiKey: config.apiKey });

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "家庭厨房助手",
+  title: "今天吃什么 BitePlan",
   description: "根据你的厨房状态，让 AI 为你生成详细、标准的烹饪方案。",
 };
 
