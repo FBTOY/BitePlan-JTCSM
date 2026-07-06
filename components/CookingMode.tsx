@@ -10,6 +10,8 @@ import {
   Lightbulb,
   List,
   X,
+  Package,
+  Droplets,
 } from "lucide-react";
 
 interface Props {
@@ -94,6 +96,46 @@ export default function CookingMode({ session, onUpdate, onFinish }: Props) {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h4 className="mb-3 text-sm font-semibold text-zinc-900">本菜谱用料参考</h4>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <div className="mb-2 flex items-center gap-1 text-xs font-medium text-zinc-500">
+              <Package size={14} /> 食材
+            </div>
+            <ul className="space-y-1 text-sm text-zinc-700">
+              {session.recipe.requiredIngredients.map((ing, idx) => (
+                <li key={idx} className="flex justify-between gap-2">
+                  <span>{ing.name}</span>
+                  {ing.quantity && (
+                    <span className="text-zinc-500">{ing.quantity}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center gap-1 text-xs font-medium text-zinc-500">
+              <Droplets size={14} /> 配料/调料
+            </div>
+            <ul className="space-y-1 text-sm text-zinc-700">
+              {(session.recipe.requiredSeasonings ?? []).map((ing, idx) => (
+                <li key={idx} className="flex justify-between gap-2">
+                  <span>{ing.name}</span>
+                  {ing.quantity && (
+                    <span className="text-zinc-500">{ing.quantity}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {(session.recipe.requiredSeasonings ?? []).length === 0 && (
+              <p className="text-sm text-zinc-400">无额外调料</p>
+            )}
+          </div>
         </div>
       </div>
 
