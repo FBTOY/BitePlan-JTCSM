@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useMounted } from "@/lib/hooks";
 import { loadSessions } from "@/lib/storage";
 import type { CookingSession, RecipeStep } from "@/lib/types";
 import {
@@ -15,9 +16,11 @@ import {
   ListOrdered,
   UtensilsCrossed,
   Package,
+  Droplets,
 } from "lucide-react";
 
 export default function HistoryPage() {
+  const mounted = useMounted();
   const [sessions] = useState<CookingSession[]>(loadSessions);
   const [selected, setSelected] = useState<CookingSession | null>(null);
 
@@ -36,7 +39,11 @@ export default function HistoryPage() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-        {sessions.length === 0 ? (
+        {!mounted ? (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-12 text-center text-sm text-zinc-400">
+            加载中……
+          </div>
+        ) : sessions.length === 0 ? (
           <div className="rounded-2xl border border-zinc-200 bg-white p-12 text-center text-zinc-500">
             还没有烹饪记录。
           </div>
@@ -104,24 +111,29 @@ function HistoryDetail({
   const recipe = session.recipe;
   const completed = new Set(session.completedStepIds);
 
+  const seasonings = recipe.requiredSeasonings ?? [];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-5 flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-zinc-900">{recipe.title}</h2>
-            <p className="mt-1 text-sm text-zinc-600">{recipe.description}</p>
+      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="border-b border-zinc-200 p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-zinc-900">{recipe.title}</h2>
+              <p className="mt-1 text-sm text-zinc-600">{recipe.description}</p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-2 hover:bg-zinc-100"
+            >
+              <X size={20} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 hover:bg-zinc-100"
-          >
-            <X size={20} />
-          </button>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-3 text-sm text-zinc-600">
+        <div className="overflow-y-auto p-6">
+          <div className="mb-6 flex flex-wrap gap-3 text-sm text-zinc-600">
           <span className="flex items-center gap-1">
             <Calendar size={14} />
             {new Date(session.startedAt).toLocaleDateString("zh-CN")}
@@ -139,7 +151,7 @@ function HistoryDetail({
           )}
         </div>
 
-        <div className="mb-6 grid gap-6 md:grid-cols-2">
+        <div className="mb-6 grid gap-6 md:grid-cols-3">
           <div>
             <h3 className="mb-2 flex items-center gap-1 font-semibold text-zinc-900">
               <Package size={16} /> 食材
@@ -154,6 +166,26 @@ function HistoryDetail({
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div>
+            <h3 className="mb-2 flex items-center gap-1 font-semibold text-zinc-900">
+              <Droplets size={16} className="text-amber-600" /> 配料/调料
+            </h3>
+            {seasonings.length > 0 ? (
+              <ul className="space-y-1 text-sm text-zinc-700">
+                {seasonings.map((ing, idx) => (
+                  <li key={idx}>
+                    {ing.name}
+                    {ing.quantity && (
+                      <span className="text-zinc-500"> · {ing.quantity}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-zinc-400">无单独调料记录</p>
+            )}
           </div>
 
           <div>
@@ -232,6 +264,7 @@ function HistoryDetail({
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

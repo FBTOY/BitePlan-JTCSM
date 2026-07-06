@@ -170,13 +170,13 @@ export function addOrUpdatePantryItem(
   const existingIndex = items.findIndex(
     (i) => i.name === item.name && i.category === item.category
   );
+  const existing = existingIndex >= 0 ? items[existingIndex] : undefined;
   const now = new Date().toISOString();
   const newItem: PantryItem = {
     ...item,
-    id:
-      existingIndex >= 0
-        ? items[existingIndex].id
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id: existing?.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    quantity: item.quantity?.trim() || existing?.quantity,
+    note: item.note?.trim() || existing?.note,
     updatedAt: now,
   };
 
