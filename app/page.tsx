@@ -205,9 +205,9 @@ export default function Home() {
   ) => {
     const item = addOrUpdatePantryItem({
       name: ingredient.name,
-      quantity: ingredient.quantity,
+      quantity: undefined,
       category,
-      note: ingredient.note,
+      note: undefined,
     });
     setPantry((prev) =>
       prev.some((i) => i.id === item.id)

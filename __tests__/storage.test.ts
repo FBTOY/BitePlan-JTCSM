@@ -113,6 +113,22 @@ describe("storage", () => {
     expect(loadPantry()[0].quantity).toBe("10个");
   });
 
+  it("preserves existing quantity and note when updating without them", () => {
+    addOrUpdatePantryItem({
+      name: "生抽",
+      quantity: "1瓶",
+      note: "玻璃瓶",
+      category: "seasoning",
+    });
+    const updated = addOrUpdatePantryItem({
+      name: "生抽",
+      category: "seasoning",
+    });
+    expect(updated.quantity).toBe("1瓶");
+    expect(updated.note).toBe("玻璃瓶");
+    expect(loadPantry()).toHaveLength(1);
+  });
+
   it("removes pantry item", () => {
     const item = addOrUpdatePantryItem({ name: "葱", category: "ingredient" });
     removePantryItem(item.id);

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Ingredient, RecipePlan } from "@/lib/types";
-import { Clock, Users, AlertCircle, ChefHat, Plus } from "lucide-react";
+import { Clock, Users, AlertCircle, ChefHat, Plus, Droplets, UtensilsCrossed } from "lucide-react";
 
 interface Props {
   plan: RecipePlan;
@@ -38,7 +38,26 @@ function IngredientRow({
   );
 }
 
+function MissingAlert({ items }: { items: Ingredient[] }) {
+  return (
+    <div className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+      <div className="mb-1 flex items-center gap-1 font-medium">
+        <AlertCircle size={14} /> 你可能还缺
+      </div>
+      {items.map((ing, idx) => (
+        <div key={idx}>
+          {ing.name}
+          {ing.quantity && ` (${ing.quantity})`}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function RecipeCard({ plan, onStart, onAddToPantry }: Props) {
+  const seasonings = plan.requiredSeasonings ?? [];
+  const missingSeasonings = plan.missingSeasonings ?? [];
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
@@ -64,7 +83,7 @@ export default function RecipeCard({ plan, onStart, onAddToPantry }: Props) {
           </span>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <div>
             <h3 className="mb-2 font-semibold text-zinc-900">所需食材</h3>
             <ul className="space-y-1 text-sm text-zinc-700">
@@ -81,22 +100,37 @@ export default function RecipeCard({ plan, onStart, onAddToPantry }: Props) {
               ))}
             </ul>
             {plan.missingIngredients && plan.missingIngredients.length > 0 && (
-              <div className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-                <div className="mb-1 flex items-center gap-1 font-medium">
-                  <AlertCircle size={14} /> 你可能还缺
-                </div>
-                {plan.missingIngredients.map((ing, idx) => (
-                  <div key={idx}>
-                    {ing.name}
-                    {ing.quantity && ` (${ing.quantity})`}
-                  </div>
-                ))}
-              </div>
+              <MissingAlert items={plan.missingIngredients} />
             )}
           </div>
 
           <div>
-            <h3 className="mb-2 font-semibold text-zinc-900">所需工具</h3>
+            <h3 className="mb-2 flex items-center gap-1 font-semibold text-zinc-900">
+              <Droplets size={16} className="text-amber-600" /> 所需配料/调料
+            </h3>
+            <ul className="space-y-1 text-sm text-zinc-700">
+              {seasonings.map((ing, idx) => (
+                <IngredientRow
+                  key={idx}
+                  ing={ing}
+                  onClick={
+                    onAddToPantry
+                      ? () => onAddToPantry(ing, "seasoning")
+                      : undefined
+                  }
+                />
+              ))}
+            </ul>
+            {seasonings.length === 0 && (
+              <p className="text-sm text-zinc-400">这道菜不需要额外调料。</p>
+            )}
+            {missingSeasonings.length > 0 && <MissingAlert items={missingSeasonings} />}
+          </div>
+
+          <div>
+            <h3 className="mb-2 flex items-center gap-1 font-semibold text-zinc-900">
+              <UtensilsCrossed size={16} className="text-blue-600" /> 所需工具
+            </h3>
             <ul className="space-y-1 text-sm text-zinc-700">
               {plan.requiredTools.map((tool, idx) => (
                 <li key={idx}>{tool}</li>

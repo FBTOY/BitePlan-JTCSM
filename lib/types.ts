@@ -87,6 +87,8 @@ export interface RecipePlan {
   estimatedTimeMinutes: number;
   requiredIngredients: Ingredient[];
   missingIngredients?: Ingredient[];
+  requiredSeasonings?: Ingredient[];
+  missingSeasonings?: Ingredient[];
   requiredTools: string[];
   missingTools?: string[];
   steps: RecipeStep[];

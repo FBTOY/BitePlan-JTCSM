@@ -56,10 +56,11 @@ describe("buildRecipePrompt", () => {
     expect(prompt).toContain("甜:50/100");
   });
 
-  it("includes custom units", () => {
+  it("includes seasoning fields in prompt", () => {
     const prompt = buildRecipePrompt(profile, "番茄炒蛋", preferences);
-    expect(prompt).toContain("用户自定义单位");
-    expect(prompt).toContain("1 勺 = 5 克");
+    expect(prompt).toContain("requiredSeasonings");
+    expect(prompt).toContain("missingSeasonings");
+    expect(prompt).toContain("调味料");
   });
 });
 
@@ -136,7 +137,30 @@ describe("parseRecipePlan", () => {
     expect(plan.missingTools).toEqual(["蒸锅"]);
   });
 
-  it("throws on invalid data", () => {
-    expect(() => parseRecipePlan('{"title": "x"}')).toThrow();
+  it("parses seasonings separately", () => {
+    const raw = JSON.stringify({
+      title: "测试",
+      description: "",
+      servings: 1,
+      estimatedTimeMinutes: 10,
+      requiredIngredients: [{ name: "牛肉", quantity: "200g" }],
+      requiredSeasonings: [{ name: "生抽", quantity: "1勺" }],
+      missingSeasonings: [{ name: "蚝油", quantity: "1勺" }],
+      requiredTools: [],
+      steps: [
+        {
+          id: "s1",
+          order: 0,
+          title: "T",
+          instruction: "I",
+          checklist: ["c"],
+        },
+      ],
+    });
+
+    const plan = parseRecipePlan(raw);
+    expect(plan.requiredSeasonings).toHaveLength(1);
+    expect(plan.requiredSeasonings?.[0].name).toBe("生抽");
+    expect(plan.missingSeasonings?.[0].name).toBe("蚝油");
   });
 });

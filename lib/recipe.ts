@@ -39,6 +39,8 @@ export const recipePlanSchema = z.object({
   estimatedTimeMinutes: z.number().int().nonnegative(),
   requiredIngredients: z.array(ingredientSchema),
   missingIngredients: z.array(ingredientSchema).optional(),
+  requiredSeasonings: z.array(ingredientSchema).optional(),
+  missingSeasonings: z.array(ingredientSchema).optional(),
   requiredTools: z.array(toolLikeSchema),
   missingTools: z.array(toolLikeSchema).optional(),
   steps: z.array(stepSchema).min(1),
@@ -127,12 +129,13 @@ ${extraNotes ? `\n## 额外说明\n${extraNotes}\n` : ""}
 要求：
 1. 根据用户现有食材和工具调整方案；缺少的食材/工具要列出但不要让方案不可执行（给出替代方案或建议）。
 2. 步骤要细粒度、可逐项勾选，每个步骤包含：标题、详细操作说明、预计耗时（分钟）、小贴士、至少一条清单项（checklist）。
-3. ${unitInstructions}
-4. ${customUnitInstructions}
-5. ${tasteInstructions}
-6. 总耗时尽量控制在用户可用时间 ${profile.timeMinutes} 分钟内。
-7. 难度与说明要匹配用户的烹饪水平。
-8. 必须严格返回下面 JSON 结构，不要包含 markdown 代码块外的任何解释文字。
+3. 必须把调味料（如盐、糖、生抽、老抽、蚝油、醋、料酒、香油、胡椒粉、花椒、八角、香叶、干辣椒、豆瓣酱等）单独列在 requiredSeasonings / missingSeasonings 中，不要放在 requiredIngredients 里。
+4. ${unitInstructions}
+5. ${customUnitInstructions}
+6. ${tasteInstructions}
+7. 总耗时尽量控制在用户可用时间 ${profile.timeMinutes} 分钟内。
+8. 难度与说明要匹配用户的烹饪水平。
+9. 必须严格返回下面 JSON 结构，不要包含 markdown 代码块外的任何解释文字。
 
 输出格式：
 ${JSON.stringify(
@@ -143,6 +146,8 @@ ${JSON.stringify(
     estimatedTimeMinutes: 0,
     requiredIngredients: [{ name: "食材", quantity: "用量", note: "备注" }],
     missingIngredients: [{ name: "食材", quantity: "用量", note: "备注" }],
+    requiredSeasonings: [{ name: "调料", quantity: "用量", note: "备注" }],
+    missingSeasonings: [{ name: "调料", quantity: "用量", note: "备注" }],
     requiredTools: ["工具"],
     missingTools: ["工具"],
     steps: [
