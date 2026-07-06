@@ -29,11 +29,25 @@ npm run dev
 3. 在「设置」中调整单位偏好。
 4. 在首页填写厨房档案，开始生成菜谱。
 
+## 局域网访问
+
+在同一局域网内的手机或其他设备上访问时，需要让 dev 服务器监听所有网络接口：
+
+```bash
+npm run dev:lan
+```
+
+然后在手机浏览器访问 `http://<电脑局域网IP>:3000`，例如 `http://192.168.50.3:3000`。`next.config.ts` 已自动把本机局域网 IP 加入 `allowedDevOrigins`。
+
+如果仍无法访问，请检查 Windows 防火墙是否允许 Node.js 通过。
+
 ## 常用命令
 
 - `npm run dev` — 开发服务器
+- `npm run dev:lan` — 开发服务器（局域网可访问）
 - `npm run build` — 生产构建
 - `npm run start` — 生产服务器
+- `npm run start:lan` — 生产服务器（局域网可访问）
 - `npm run lint` — 代码检查
 - `npm test` — 运行测试
 - `npm run test:watch` — 监听模式运行测试
